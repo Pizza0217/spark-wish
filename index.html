@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spark - 愿望交换商店</title>
+    <style>
+        :root { --primary: #ff6b6b; --bg: #f7f7f7; --card: #ffffff; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        header { text-align: center; margin-bottom: 40px; }
+        h1 { color: var(--primary); margin: 0; }
+        p.subtitle { color: #666; }
+        .container { max-width: 800px; margin: 0 auto; }
+        /* 愿望卡片样式 */
+        .wish-card { background: var(--card); padding: 20px; margin-bottom: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.2s; }
+        .wish-card:hover { transform: translateY(-2px); }
+        .wish-title { font-weight: bold; font-size: 1.1em; color: #333; }
+        .wish-reward { background: #fff3cd; padding: 5px 10px; border-radius: 5px; font-size: 0.9em; color: #856404; display: inline-block; margin-top: 5px; }
+        .btn { display: inline-block; padding: 8px 16px; background: var(--primary); color: white; text-decoration: none; border-radius: 5px; margin-top: 10px; font-size: 0.9em; border: none; cursor: pointer; }
+        /* 发布按钮 */
+        .publish-btn { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; font-size: 30px; line-height: 60px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>Spark 愿望交换商店</h1>
+        <p class="subtitle">点亮你的心愿，用交换传递温暖</p>
+    </header>
+    <!-- 愿望列表区域 -->
+    <div id="wish-list">
+        <div class="wish-card">
+            <div class="wish-title">正在加载心愿数据...</div>
+            <p>请确保您已配置好 GitHub 仓库地址。</p>
+        </div>
+    </div>
+</div>
+<!-- 发布愿望入口 -->
+<a href="#" id="publish-link" class="publish-btn" title="发布新愿望">+</a>
+<script>
+    // 配置区域：请将 'YOUR_USERNAME/YOUR_REPO' 替换为您的 GitHub 用户名和仓库名
+    // 例如：const REPO_PATH = 'octocat/spark-wish';
+    const REPO_PATH = 'YOUR_USERNAME/YOUR_REPO'; 
+    // 1. 设置发布按钮链接（跳转到 GitHub Issues 新建页面）
+    document.getElementById('publish-link').href = `https://github.com/${REPO_PATH}/issues/new`;
+    // 2. 获取并展示愿望列表
+    async function loadWishes() {
+        const listContainer = document.getElementById('wish-list');
+        try {
+            // 使用 GitHub API 获取 Issues
+            const response = await fetch(`https://api.github.com/repos/${REPO_PATH}/issues?state=open`);
+            const wishes = await response.json();
+            if (wishes.length === 0) {
+                listContainer.innerHTML = '<div class="wish-card"><p>暂无心愿，点击右下角 "+" 发布第一个愿望吧！</p></div>';
+                return;
+            }
+            listContainer.innerHTML = ''; // 清空加载提示
+            wishes.forEach(wish => {
+                // 简单解析内容（假设用户在 Issue 中填写了"回报："）
+                const card = document.createElement('div');
+                card.className = 'wish-card';
+                card.innerHTML = `
+                    <div class="wish-title">${wish.title}</div>
+                    <div class="wish-reward">回报：${wish.body ? wish.body.substring(0, 50) + '...' : '未详细说明'}</div>
+                    <br>
+                    <a href="${wish.html_url}" target="_blank" class="btn">帮助实现</a>
+                    <span style="font-size: 0.8em; color: #999; margin-left: 10px;">发布于 ${new Date(wish.created_at).toLocaleDateString()}</span>
+                `;
+                listContainer.appendChild(card);
+            });
+        } catch (error) {
+            listContainer.innerHTML = '<div class="wish-card" style="color:red;">数据加载失败，请检查配置或网络。</div>';
+        }
+    }
+    loadWishes();
+</script>
+</body>
+</html>
